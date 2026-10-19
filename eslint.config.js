@@ -467,7 +467,10 @@ const headerRules = {
 	'header/header': [
 		'error',
 		'line',
-		[{ pattern: ' Copyright \\d{4} (IOTA Stiftung|3Sixty Trade Ltd)\\.' }, ' SPDX-License-Identifier: Apache-2.0.']
+		{
+			pattern:
+				'^( Copyright \\d{4} (IOTA Stiftung|3Sixty Trade Ltd)\\.\\r?\\n)+ SPDX-License-Identifier: Apache-2\\.0\\.(\\r?\\n|$)'
+		}
 	]
 };
 
