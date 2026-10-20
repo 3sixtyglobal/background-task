@@ -70,6 +70,15 @@ async function generateConfig(targetDirectory, releaseType, packageNames) {
 		config['prerelease-type'] = 'next';
 	}
 
+	// Keep the changelog anchor maintained by the versions-prepare workflow.
+	const filename = path.join(targetDirectory, `release-please-config.${releaseType}.json`);
+	if (await fileExists(filename)) {
+		const existingConfig = await loadJson(filename);
+		if (existingConfig['last-release-sha']) {
+			config['last-release-sha'] = existingConfig['last-release-sha'];
+		}
+	}
+
 	config.packages = {};
 	config.plugins = [
 		'node-workspace',
@@ -101,7 +110,7 @@ async function generateConfig(targetDirectory, releaseType, packageNames) {
 		await mkdir(targetDirectory, { recursive: true });
 	}
 
-	await saveJson(path.join(targetDirectory, `release-please-config.${releaseType}.json`), config);
+	await saveJson(filename, config);
 }
 
 /**
