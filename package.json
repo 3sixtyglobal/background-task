@@ -1,5 +1,5 @@
 {
-	"name": "@3sixty/background-task",
+	"name": "3sixty-background-task",
 	"version": "0.0.0",
 	"description": "Packages for modelling, executing, and scheduling background tasks in TWIN applications",
 	"repository": {
