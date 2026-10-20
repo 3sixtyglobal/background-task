@@ -87,6 +87,8 @@ runs:
     # Setup pnpm after node, the runners have no system node for its installer to use.
     - name: Setup pnpm
       uses: pnpm/action-setup@v6
+      with:
+        cache: true
 
     # Install and prepare the tooling release-please depends on, with retry to
     # handle transient registry failures.

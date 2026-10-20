@@ -81,6 +81,8 @@ jobs:
       # Setup pnpm after node, the runners have no system node for its installer to use.
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
+        with:
+          cache: true
 
       # Create a new branch for the deployment
       - name: Create Deployment Update Branch

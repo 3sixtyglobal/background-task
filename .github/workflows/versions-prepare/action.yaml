@@ -123,6 +123,8 @@ runs:
     # Setup pnpm after node, the runners have no system node for its installer to use.
     - name: Setup pnpm
       uses: pnpm/action-setup@v6
+      with:
+        cache: true
 
     # Hotfix mode: instead of the content alignment, sync only the release
     # artifacts from main: the prod manifest (so the version script continues

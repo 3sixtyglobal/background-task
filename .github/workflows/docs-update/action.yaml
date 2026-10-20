@@ -51,6 +51,8 @@ runs:
     # Setup pnpm after node, the runners have no system node for its installer to use.
     - name: Setup pnpm
       uses: pnpm/action-setup@v6
+      with:
+        cache: true
 
     # Import GPG key for signed commits.
     - name: Import GPG key
