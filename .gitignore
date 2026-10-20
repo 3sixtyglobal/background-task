@@ -4,6 +4,8 @@ node_modules
 **/dist/es
 **/dist/types
 **/dist/locales
+*.tsbuildinfo
+.cache
 coverage
 *.tgz
 **/.tmp

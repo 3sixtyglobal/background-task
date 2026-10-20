@@ -14,12 +14,12 @@
 		"node": ">=24.0.0"
 	},
 	"scripts": {
-		"clean": "rimraf dist coverage",
-		"build": "tspc",
+		"clean": "rimraf dist coverage .cache",
+		"build": "tspc --incremental --tsBuildInfoFile .cache/tsconfig.tsbuildinfo",
 		"dev": "nodemon --watch src --ext ts --exec \"pnpm run build\"",
 		"test": "vitest --run --config ./vitest.config.ts --no-cache",
 		"test:coverage": "vitest --run --coverage --config ./vitest.config.ts --no-cache",
-		"test:build": "tspc -p ./tests/tsconfig.json --noEmit",
+		"test:build": "tspc -p ./tests/tsconfig.json --noEmit --incremental --tsBuildInfoFile .cache/tests.tsbuildinfo",
 		"validate-locales": "validate-locales",
 		"docs:clean": "rimraf docs/reference",
 		"docs:generate": "typedoc --options typedoc.config.mjs",
