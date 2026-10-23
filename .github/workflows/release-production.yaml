@@ -653,9 +653,8 @@ jobs:
           done
 
       # pnpm walks the workspace in dependency order, so each package is listed after
-      # the packages it depends on. The publish matrix runs one package at a time and
-      # each installs its dependencies from the registry, so a dependency published
-      # after its dependent would fail to resolve.
+      # the packages it depends on. Each package installs its dependencies from the
+      # local registry, so a dependency built after its dependent would fail to resolve.
       - name: Resolve workspace publish order
         id: read-workspaces
         run: |
@@ -663,19 +662,16 @@ jobs:
           echo "Found packages: $PACKAGES"
           echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
 
-  # Only runs on the pull_request path; 'later phase only' is the fallback name shown on workflow_dispatch where this job is skipped.
+  # Builds and tests the packages one at a time against a local registry, then
+  # publishes them all to npm once every package has passed.
   publish-packages:
-    name: Publish Package (${{ matrix.package || 'later phase only' }})
+    name: Publish Packages
     runs-on: ${{ github.event.repository.private && fromJSON('{"group":"3sixty","labels":"self-hosted"}') || 'ubuntu-latest' }}
 
     permissions:
       contents: read
       id-token: write
     needs: process-workspaces
-    strategy:
-      max-parallel: 1 # one package at a time — parallel dist builds can share global node_modules
-      matrix:
-        package: ${{ fromJson(needs.process-workspaces.outputs.packages) }}
 
     steps:
       - name: Checkout
@@ -710,100 +706,13 @@ jobs:
       - name: Setup Test Environment
         uses: ./.github/workflows/setup-test-env
         with:
-          package: ${{ matrix.package }}
           test_env_vars: ${{ secrets.ORG_TEST_ENV_VARS }}
 
-      - name: Remove Mono-Repo Node Modules
-        run: |
-          # Copy the workspace settings into the package directory so it becomes its own
-          # workspace root, with the package globs commented out, then remove the workspace
-          # files so pnpm installs dependencies from the registry as it would for a package
-          # consumer. Leaving a workspace file at the repository root instead makes pnpm
-          # treat the package as a non-member and skip the install entirely.
-          sed '/^packages:/,/^$/ s/^/# /' pnpm-workspace.yaml > "${{ matrix.package }}/pnpm-workspace.yaml"
-          rm -f package.json pnpm-lock.yaml pnpm-workspace.yaml
-
-      # Retried to handle transient registry failures.
-      - name: Install dependencies
-        run: |
-          cd ${{ matrix.package }}
-          for i in {1..5}; do
-            pnpm install --no-frozen-lockfile && break || {
-              if [ $i -eq 5 ]; then
-                echo "pnpm install failed after 5 attempts"
-                exit 1
-              fi
-              echo "pnpm install failed, retrying in 30 seconds (attempt $i/5)..."
-              sleep 30
-            }
-          done
-
-      - name: Run Dist
-        run: |
-          cd ${{ matrix.package }}
-          pnpm run dist
-
-      - name: Cleanup package.json properties
-        run: |
-          cd ${{ matrix.package }}
-          # The build approvals are only needed for install and dist.
-          rm -f pnpm-workspace.yaml
-          # Strip dev-only fields so they are absent from the published tarball.
-          npm pkg delete scripts
-          npm pkg delete devDependencies
-
-      - name: Pack NPM Package
-        id: pack_npm_package
-        run: |
-          cd ${{ matrix.package }}
-          TARBALL_FILENAME=$(npm pack --json | node -e 'const input = JSON.parse(require("fs").readFileSync(0, "utf8")); console.log(input[0].filename);')
-          echo "tarball_filename=${TARBALL_FILENAME}" >> $GITHUB_OUTPUT
-
-      - name: Publish NPM Package
-        id: publish_npm_package
-        run: |
-          cd ${{ matrix.package }}
-          IS_PRIVATE=$(node -e "console.log(require('./package.json').private === true ? 'true' : 'false')")
-          PACKAGE_NAME=$(node -e "console.log(require('./package.json').name)")
-          PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
-
-          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
-          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-
-          if [ "$IS_PRIVATE" = "true" ]; then
-            echo "Package is marked as private, skipping publication"
-            echo "published=false" >> $GITHUB_OUTPUT
-          else
-            # Authenticates with npm trusted publishing (OIDC via the job's id-token permission).
-            npm publish "${{ steps.pack_npm_package.outputs.tarball_filename }}" --access public --tag latest ${{ !github.event.repository.private && '--provenance' || '' }}
-            echo "published=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Wait for package to be available on npm
-        if: steps.publish_npm_package.outputs.published == 'true'
-        run: |
-          PACKAGE_NAME='${{ steps.publish_npm_package.outputs.package_name }}'
-          PACKAGE_VERSION='${{ steps.publish_npm_package.outputs.package_version }}'
-
-          echo "Waiting for ${PACKAGE_NAME}@${PACKAGE_VERSION} to become available on npm..."
-
-          MAX_ATTEMPTS=20
-          SLEEP_SECONDS=10
-
-          for attempt in $(seq 1 $MAX_ATTEMPTS); do
-            if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version >/dev/null 2>&1; then
-              echo "Package ${PACKAGE_NAME}@${PACKAGE_VERSION} is now available on npm."
-              exit 0
-            fi
-
-            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
-              echo "Timed out waiting for ${PACKAGE_NAME}@${PACKAGE_VERSION} to appear on npm."
-              exit 0  # non-fatal: publish succeeded; registry propagation lag is acceptable
-            fi
-
-            echo "Not available yet (attempt ${attempt}/${MAX_ATTEMPTS}); retrying in ${SLEEP_SECONDS}s..."
-            sleep $SLEEP_SECONDS
-          done
+      - name: Publish Packages
+        uses: ./.github/workflows/publish-packages
+        with:
+          packages: ${{ needs.process-workspaces.outputs.packages }}
+          npm_tag: latest
 
       - name: Teardown Test Environment
         if: always()

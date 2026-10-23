@@ -1,0 +1,155 @@
+name: Publish Packages
+description: Build and test each package in isolation against a local Verdaccio registry, then publish the verified tarballs to npm.
+
+inputs:
+  packages:
+    description: 'JSON array of package directories in dependency order'
+    required: true
+  npm_tag:
+    description: 'The npm dist-tag to publish with, next or latest'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Verdaccio serves the packages published in this run and proxies everything
+    # else from npm, so each package can install the in-repo packages it depends on
+    # as soon as they are built, without waiting for them to appear on npm.
+    - name: Start local registry
+      shell: bash
+      run: |
+        REGISTRY_DIR="$RUNNER_TEMP/verdaccio"
+        mkdir -p "$REGISTRY_DIR/storage"
+        cat > "$REGISTRY_DIR/config.yaml" <<'EOF'
+        storage: ./storage
+        auth:
+          htpasswd:
+            file: ./htpasswd
+            max_users: 1
+        uplinks:
+          npmjs:
+            url: https://registry.npmjs.org/
+            timeout: 60s
+        packages:
+          '**':
+            access: $all
+            publish: $authenticated
+            proxy: npmjs
+        listen: 127.0.0.1:4873
+        log: { type: stdout, format: pretty, level: warn }
+        EOF
+
+        cd "$REGISTRY_DIR"
+        nohup npx --yes verdaccio@6.10.5 --config ./config.yaml > verdaccio.log 2>&1 &
+        echo $! > verdaccio.pid
+
+        LOCAL_REGISTRY="http://127.0.0.1:4873/"
+        for i in {1..30}; do
+          curl -sf "${LOCAL_REGISTRY}-/ping" > /dev/null && break || {
+            if [ $i -eq 30 ]; then
+              echo "Verdaccio did not start"
+              cat verdaccio.log
+              exit 1
+            fi
+            sleep 2
+          }
+        done
+
+        # Register a throwaway user to get a publish token, stored in the npm user
+        # config so it is only sent to the local registry.
+        PASSWORD=$(node -e 'console.log(require("crypto").randomBytes(24).toString("hex"))')
+        TOKEN=$(curl -sf -X PUT "${LOCAL_REGISTRY}-/user/org.couchdb.user:release" \
+          -H 'content-type: application/json' \
+          -d "{\"name\":\"release\",\"password\":\"$PASSWORD\"}" \
+          | node -e 'console.log(JSON.parse(require("fs").readFileSync(0, "utf8")).token)')
+        echo "::add-mask::$TOKEN"
+        npm config set "//127.0.0.1:4873/:_authToken" "$TOKEN"
+
+        echo "LOCAL_REGISTRY=$LOCAL_REGISTRY" >> "$GITHUB_ENV"
+        echo "TARBALL_DIR=$RUNNER_TEMP/tarballs" >> "$GITHUB_ENV"
+
+    # Each package becomes its own workspace root, with the package globs commented
+    # out, and the root workspace files are removed so pnpm installs dependencies
+    # from the registry as it would for a package consumer. The packages are
+    # processed in dependency order, and each is published to the local registry
+    # before its dependents install.
+    - name: Build packages in isolation
+      shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        NPM_TAG: ${{ inputs.npm_tag }}
+      run: |
+        mkdir -p "$TARBALL_DIR"
+        sed '/^packages:/,/^$/ s/^/# /' pnpm-workspace.yaml > "$RUNNER_TEMP/pnpm-workspace.yaml"
+        rm -f package.json pnpm-lock.yaml pnpm-workspace.yaml
+
+        for PACKAGE in $(node -e 'for (const p of JSON.parse(process.env.PACKAGES)) console.log(p)'); do
+          echo "::group::$PACKAGE"
+          cp "$RUNNER_TEMP/pnpm-workspace.yaml" "$PACKAGE/pnpm-workspace.yaml"
+          cd "$PACKAGE"
+
+          # Retried to handle transient registry failures.
+          for i in {1..5}; do
+            pnpm install --no-frozen-lockfile --registry="$LOCAL_REGISTRY" && break || {
+              if [ $i -eq 5 ]; then
+                echo "pnpm install failed after 5 attempts"
+                exit 1
+              fi
+              echo "pnpm install failed, retrying in 30 seconds (attempt $i/5)..."
+              sleep 30
+            }
+          done
+
+          pnpm run dist
+
+          # The build approvals are only needed for install and dist.
+          rm -f pnpm-workspace.yaml
+          # Strip dev-only fields so they are absent from the published tarball.
+          npm pkg delete scripts
+          npm pkg delete devDependencies
+
+          # npm 11 reports an array and npm 12 an object keyed by package name.
+          TARBALL="$TARBALL_DIR/$(npm pack --json --pack-destination "$TARBALL_DIR" | node -e 'const input = JSON.parse(require("fs").readFileSync(0, "utf8")); console.log(Object.values(input)[0].filename);')"
+
+          if [ "$(node -p "require('./package.json').private === true")" = "true" ]; then
+            echo "Package is marked as private, skipping publication"
+          else
+            npm publish "$TARBALL" --registry "$LOCAL_REGISTRY" --tag "$NPM_TAG"
+            printf '%s\t%s\t%s\n' "$TARBALL" "$(node -p "require('./package.json').name")" "$(node -p "require('./package.json').version")" >> "$TARBALL_DIR/publish-order.txt"
+          fi
+
+          cd "$GITHUB_WORKSPACE"
+          echo "::endgroup::"
+        done
+
+    # Only reached once every package has built and tested, so a failure leaves
+    # npm untouched. Versions already on npm are skipped so a failed publish can
+    # be re-run.
+    - name: Publish to npm
+      shell: bash
+      env:
+        NPM_TAG: ${{ inputs.npm_tag }}
+      run: |
+        if [ ! -f "$TARBALL_DIR/publish-order.txt" ]; then
+          echo "No public packages to publish"
+          exit 0
+        fi
+
+        while IFS=$'\t' read -r TARBALL PACKAGE_NAME PACKAGE_VERSION; do
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version > /dev/null 2>&1; then
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is already on npm, skipping"
+            continue
+          fi
+
+          # Authenticates with npm trusted publishing (OIDC via the job's id-token permission).
+          npm publish "$TARBALL" --access public --tag "$NPM_TAG" ${{ !github.event.repository.private && '--provenance' || '' }}
+        done < "$TARBALL_DIR/publish-order.txt"
+
+    - name: Stop local registry
+      if: always()
+      shell: bash
+      run: |
+        PID_FILE="$RUNNER_TEMP/verdaccio/verdaccio.pid"
+        if [ -f "$PID_FILE" ]; then
+          kill "$(cat "$PID_FILE")" || true
+        fi

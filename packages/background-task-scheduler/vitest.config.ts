@@ -8,6 +8,7 @@ export default defineConfig({
 	test: {
 		include: ["./tests/**/*.spec.ts"],
 		globals: true,
+		cache: false,
 		testTimeout: 300000,
 		hookTimeout: 300000,
 		bail: 1,
