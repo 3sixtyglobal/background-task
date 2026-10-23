@@ -301,17 +301,17 @@ importers:
         version: 0.20.0-next.2
       '@3sixty/entity-storage-models':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/logging-models':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/nameof':
         specifier: next
         version: 0.20.0-next.2
     devDependencies:
       '@3sixty/entity-storage-connector-memory':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/nameof-transformer':
         specifier: next
         version: 0.20.0-next.2
@@ -356,7 +356,7 @@ importers:
     dependencies:
       '@3sixty/api-models':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/background-task-models':
         specifier: 0.20.0-next.0
         version: link:../background-task-models
@@ -374,10 +374,10 @@ importers:
         version: 0.20.0-next.2
       '@3sixty/entity-storage-models':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/logging-models':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/modules':
         specifier: next
         version: 0.20.0-next.2
@@ -387,7 +387,7 @@ importers:
     devDependencies:
       '@3sixty/entity-storage-connector-memory':
         specifier: next
-        version: 0.20.0-next.0
+        version: 0.20.0-next.1
       '@3sixty/nameof-transformer':
         specifier: next
         version: 0.20.0-next.2
@@ -430,8 +430,8 @@ importers:
 
 packages:
 
-  '@3sixty/api-models@0.20.0-next.0':
-    resolution: {integrity: sha512-AShxxmk3JR5dvLyC3zXYsBb4FZbtoNYsRlB2TUynLk4epOSZcZN+p8Ya+cMM+vsbLT8joA/Jk8TC9fPSEKSk3g==}
+  '@3sixty/api-models@0.20.0-next.1':
+    resolution: {integrity: sha512-1KmZs1JOKJKqo1UEpIgWblBcnefBQ/L027HPcck7gqYp/pDJT93/OOPPv0VwHccDY4C/UN0ZhC1oD4TPv+2k3Q==}
     engines: {node: '>=24.0.0'}
 
   '@3sixty/cli-core@0.20.0-next.2':
@@ -450,20 +450,20 @@ packages:
     resolution: {integrity: sha512-0tLDaAs5j3NDob9PcmTGP7SBBr2BUnmmgj7/EuvGZNXB1qDV9+ZlYbI2R6KSf8FtGs+S1VsOohgRoqIIBoGvgQ==}
     engines: {node: '>=24.0.0'}
 
-  '@3sixty/entity-storage-connector-memory@0.20.0-next.0':
-    resolution: {integrity: sha512-jN76Ljx3Xmqx6sng1aBR6WE66mcxUxEwWON5CzBjBRq21PvJdS7jFmXz6JPJH387dRzy5ar76W9yenrES5ajrQ==}
+  '@3sixty/entity-storage-connector-memory@0.20.0-next.1':
+    resolution: {integrity: sha512-IEDnCJGk/DlH3jHajIG+s5SQ36ZhR0Mjo38ISXJKmXbQlcl4CtNfh3Ac/1isBt7cbL2FU4ZeJGOL1pVFAa4xlQ==}
     engines: {node: '>=24.0.0'}
 
-  '@3sixty/entity-storage-models@0.20.0-next.0':
-    resolution: {integrity: sha512-IG5JgBzpNScXF2+XExjFYLnSSbsFfYGCERXMx6JpB1NRzD7XvwmUWUkvBxGjcXhayEqnE0eEiEdXRp7Xevt3Iw==}
+  '@3sixty/entity-storage-models@0.20.0-next.1':
+    resolution: {integrity: sha512-Ruf3cG2VOipevsG1WnZjxya/MIu0M4XNaEwZ7O/inbje+vkdf0PHDyHqxcFXMXOTX+U8dvD+z7SPitfsBp/Tvg==}
     engines: {node: '>=24.0.0'}
 
   '@3sixty/entity@0.20.0-next.2':
     resolution: {integrity: sha512-iq8T0sVI+FGheo7SXmoEPtUAgSIvej7NSy06vD3od5a84WyHzTHsf4nlvV97VDegFyUxXjAhKS5WjLK8tbjFdA==}
     engines: {node: '>=24.0.0'}
 
-  '@3sixty/logging-models@0.20.0-next.0':
-    resolution: {integrity: sha512-I4EunSdIs/pHPAM0uGw9T8KDWluGFtWJ5n+jYCW9Vwgk/OF4Vszila/IdSt0NN2kVYzGj4sCD6CvPtJOcT+FXw==}
+  '@3sixty/logging-models@0.20.0-next.1':
+    resolution: {integrity: sha512-PvrnZSBuws7TML96voAcKN7jZqMSbMKyq3IXh3dZ1zpgU6U7iBsqT5ynfOln2P3vkVdD29ohFOrX1zr5NPsX8Q==}
     engines: {node: '>=24.0.0'}
 
   '@3sixty/modules@0.20.0-next.2':
@@ -3622,7 +3622,7 @@ packages:
 
 snapshots:
 
-  '@3sixty/api-models@0.20.0-next.0':
+  '@3sixty/api-models@0.20.0-next.1':
     dependencies:
       '@3sixty/context': 0.20.0-next.2
       '@3sixty/core': 0.20.0-next.2
@@ -3661,23 +3661,23 @@ snapshots:
       '@scure/bip39': 2.4.0
       micro-key-producer: 0.10.2
 
-  '@3sixty/entity-storage-connector-memory@0.20.0-next.0':
+  '@3sixty/entity-storage-connector-memory@0.20.0-next.1':
     dependencies:
-      '@3sixty/api-models': 0.20.0-next.0
+      '@3sixty/api-models': 0.20.0-next.1
       '@3sixty/context': 0.20.0-next.2
       '@3sixty/core': 0.20.0-next.2
       '@3sixty/entity': 0.20.0-next.2
-      '@3sixty/entity-storage-models': 0.20.0-next.0
-      '@3sixty/logging-models': 0.20.0-next.0
+      '@3sixty/entity-storage-models': 0.20.0-next.1
+      '@3sixty/logging-models': 0.20.0-next.1
       '@3sixty/nameof': 0.20.0-next.2
 
-  '@3sixty/entity-storage-models@0.20.0-next.0':
+  '@3sixty/entity-storage-models@0.20.0-next.1':
     dependencies:
       '@3sixty/context': 0.20.0-next.2
       '@3sixty/core': 0.20.0-next.2
       '@3sixty/crypto': 0.20.0-next.2
       '@3sixty/entity': 0.20.0-next.2
-      '@3sixty/logging-models': 0.20.0-next.0
+      '@3sixty/logging-models': 0.20.0-next.1
       '@3sixty/nameof': 0.20.0-next.2
 
   '@3sixty/entity@0.20.0-next.2':
@@ -3687,7 +3687,7 @@ snapshots:
       reflect-metadata: 0.2.2
       tslib: 2.8.1
 
-  '@3sixty/logging-models@0.20.0-next.0':
+  '@3sixty/logging-models@0.20.0-next.1':
     dependencies:
       '@3sixty/core': 0.20.0-next.2
       '@3sixty/entity': 0.20.0-next.2
