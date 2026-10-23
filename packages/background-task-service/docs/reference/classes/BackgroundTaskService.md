@@ -123,11 +123,11 @@ Register a handler for a task.
 
 #### Type Parameters
 
-##### T
+##### T {#t}
 
 `T`
 
-##### U
+##### U {#u}
 
 `U`
 
@@ -249,7 +249,7 @@ Create a new task.
 
 #### Type Parameters
 
-##### T
+##### T {#t-1}
 
 `T`
 
@@ -309,11 +309,11 @@ Get the task details.
 
 #### Type Parameters
 
-##### T
+##### T {#t-2}
 
 `T`
 
-##### U
+##### U {#u-1}
 
 `U`
 
