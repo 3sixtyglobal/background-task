@@ -4,11 +4,11 @@ Interface describing a background task.
 
 ## Type Parameters
 
-### T
+### T {#t}
 
 `T` = `any`
 
-### U
+### U {#u}
 
 `U` = `any`
 
