@@ -1,6 +1,6 @@
 {
 	"name": "@3sixty/background-task-scheduler",
-	"version": "0.20.0-next.0",
+	"version": "0.20.0-next.1",
 	"description": "Schedules background tasks for one-off or recurring execution windows",
 	"repository": {
 		"type": "git",
@@ -28,7 +28,7 @@
 		"dist:no-test": "pnpm run clean && concurrently -g -n build,locales,types \"pnpm run build\" \"pnpm run validate-locales\" \"pnpm run test:build\""
 	},
 	"dependencies": {
-		"@3sixty/background-task-models": "0.20.0-next.0",
+		"@3sixty/background-task-models": "0.20.0-next.1",
 		"@3sixty/core": "next",
 		"@3sixty/entity": "next",
 		"@3sixty/entity-storage-models": "next",
