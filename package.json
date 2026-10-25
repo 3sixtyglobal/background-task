@@ -11,7 +11,8 @@
 	"private": true,
 	"packageManager": "pnpm@12.4.1",
 	"engines": {
-		"node": ">=24.0.0"
+		"node": ">=24.0.0",
+		"bun": ">=1.4.4"
 	},
 	"scripts": {
 		"clean": "pnpm -r --parallel run clean",
@@ -22,6 +23,7 @@
 		"dist:no-test": "pnpm -r run dist:no-test",
 		"test:build": "pnpm -r --parallel run test:build",
 		"test": "pnpm -r --parallel run test",
+		"test:bun": "pnpm -r --parallel run test:bun",
 		"test:coverage": "pnpm -r --parallel run test:coverage",
 		"format": "prettier --config prettier.config.mjs --write . --cache --log-level silent",
 		"lint:format": "prettier --config prettier.config.mjs --check . --cache",

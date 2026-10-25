@@ -85,6 +85,14 @@ jobs:
           pnpm run quality
           pnpm run docs
 
+      # Setup Bun
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # Run the tests again on the Bun runtime
+      - name: Run Tests (Bun)
+        run: pnpm run test:bun
+
       # Always teardown the environment, necessary to cleanup self-hosted
       - name: Teardown Test Environment
         if: always()
