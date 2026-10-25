@@ -20,6 +20,10 @@ inputs:
   release_token:
     description: 'GitHub token for checkout and PR approval'
     required: true
+  force_release:
+    description: 'Add an empty feat commit so a next release publishes even without releasable commits'
+    required: false
+    default: 'false'
 
 outputs:
   pr_number:
@@ -125,19 +129,28 @@ runs:
         git config --global commit.gpgsign true
         git config --global tag.gpgsign true
 
-    # Production releases may need an empty conventional commit so release-please
-    # sees a releasable commit since the last release. Push via a short-lived
-    # branch + auto-merged PR to satisfy the "Changes must be made through a
-    # pull request" branch protection rule on main.
+    # Production releases, and forced next releases, need an empty conventional
+    # commit so release-please sees a releasable commit since the last release.
+    # An empty commit applies to every package. Push via a short-lived branch +
+    # auto-merged PR to satisfy the "Changes must be made through a pull
+    # request" branch protection rule.
     - name: Force release via PR
-      if: ${{ inputs.branch == 'main' }}
+      if: ${{ inputs.branch == 'main' || inputs.force_release == 'true' }}
       shell: bash
       run: |
-        PROD_VERSION=$(node -e "
-          const m = JSON.parse(require('fs').readFileSync('release/release-please-manifest.prod.json', 'utf8'));
-          console.log(Object.values(m)[0]);
-        ")
-        echo "Release-As version: $PROD_VERSION"
+        BRANCH="${{ inputs.branch }}"
+        if [ "$BRANCH" = "main" ]; then
+          PROD_VERSION=$(node -e "
+            const m = JSON.parse(require('fs').readFileSync('release/release-please-manifest.prod.json', 'utf8'));
+            console.log(Object.values(m)[0]);
+          ")
+          echo "Release-As version: $PROD_VERSION"
+          FORCE_TITLE="feat: release to production"
+          FORCE_TRAILER="Release-As: $PROD_VERSION"
+        else
+          FORCE_TITLE="feat: release to next"
+          FORCE_TRAILER="Forced release of all packages."
+        fi
 
         FORCE_BRANCH="release/force-commit-$(date +%s)"
         git checkout -b "$FORCE_BRANCH"
@@ -147,14 +160,14 @@ runs:
         # this PR starts no release job: process-workspaces requires the
         # 'autorelease: pending' label, which only the release PR has. The
         # Release-As trailer stays in the body, so release-please still reads it.
-        git commit -S --allow-empty -m "feat: release to production [skip ci]" -m "Release-As: $PROD_VERSION"
+        git commit -S --allow-empty -m "$FORCE_TITLE [skip ci]" -m "$FORCE_TRAILER"
         git push origin "$FORCE_BRANCH"
-        git checkout main
+        git checkout "$BRANCH"
 
         PR_URL=$(gh pr create \
-          --title "feat: release to production" \
-          --body "Automated force commit to trigger release-please for this production release." \
-          --base main \
+          --title "$FORCE_TITLE" \
+          --body "Automated force commit to trigger release-please for this release." \
+          --base "$BRANCH" \
           --head "$FORCE_BRANCH")
         PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]\+$')
         echo "FORCE_COMMIT_PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
@@ -163,7 +176,7 @@ runs:
         GH_TOKEN: ${{ inputs.github_token }}
 
     - name: Approve and merge force commit PR
-      if: ${{ inputs.branch == 'main' }}
+      if: ${{ inputs.branch == 'main' || inputs.force_release == 'true' }}
       shell: bash
       run: |
         PR_NUMBER="$FORCE_COMMIT_PR_NUMBER"
@@ -175,8 +188,8 @@ runs:
         #
         # UNSTABLE is accepted alongside CLEAN because this PR is opened by
         # GITHUB_TOKEN, so the workflow runs it triggers are parked as
-        # action_required and never execute. The main branch has no required
-        # status checks, so that must not block the merge.
+        # action_required and never execute. The main and next branches have no
+        # required status checks, so that must not block the merge.
         for i in {1..60}; do
           MERGE_STATE=$(gh pr view "$PR_NUMBER" \
             --repo "${{ github.repository }}" \
@@ -197,7 +210,7 @@ runs:
           sleep 10
         done
 
-        git pull origin main
+        git pull origin "${{ inputs.branch }}"
       env:
         GH_TOKEN: ${{ inputs.release_token }}
 

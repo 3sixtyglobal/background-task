@@ -14,7 +14,8 @@ name: Release Next
 #   Polls until the version reset PR is approved and merged.
 #
 # Prepare prerelease PR:
-#   Runs release-please to create a versioned prerelease PR.
+#   Optionally merges an empty feat commit (force), then runs release-please to
+#   create a versioned prerelease PR.
 #
 # Merge prerelease PR:
 #   Approves and merges the release PR (autorelease: pending) automatically.
@@ -30,6 +31,11 @@ on:
         required: false
         type: string
         default: ''
+      force:
+        description: 'Add a "feat: release to next" commit so every package publishes, even without releasable changes.'
+        required: false
+        type: boolean
+        default: false
 
 env:
   ORG_GPG_EMAIL: ${{ secrets.ORG_GPG_EMAIL }}
@@ -174,6 +180,7 @@ jobs:
         with:
           branch: next
           semver_type: prerelease
+          force_release: ${{ inputs.force }}
           gpg_private_key: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           gpg_key_id: ${{ secrets.ORG_GPG_KEY_ID }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
