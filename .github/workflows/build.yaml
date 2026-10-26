@@ -1,5 +1,5 @@
 name: Build
-run-name: ${{ inputs.bunOnly && 'Build (Bun only)' || github.event.pull_request.title || github.event.head_commit.message || 'Build' }}
+run-name: ${{ inputs.bunOnly && 'Build (Bun only)' || '' }}
 
 on:
   workflow_dispatch:
