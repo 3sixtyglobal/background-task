@@ -2,6 +2,12 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      bunOnly:
+        description: 'Only compile and run the Bun tests, as the release workflow runs the rest.'
+        required: false
+        type: boolean
+        default: false
   pull_request:
     branches:
       - next
@@ -81,9 +87,15 @@ jobs:
 
       # Run Lint and Dist
       - name: Run Lint and Dist
+        if: ${{ !inputs.bunOnly }}
         run: |
           pnpm run quality
           pnpm run docs
+
+      # Build the packages and tests only, for the Bun tests to run against
+      - name: Compile
+        if: ${{ inputs.bunOnly }}
+        run: pnpm run compile
 
       # Setup Bun
       - name: Setup Bun
