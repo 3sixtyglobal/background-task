@@ -1,6 +1,6 @@
 {
 	"name": "@3sixty/background-task-service",
-	"version": "0.20.0-next.1",
+	"version": "0.20.0-next.2",
 	"description": "Provides a storage-backed service for creating, managing, and executing background tasks",
 	"repository": {
 		"type": "git",
@@ -31,7 +31,7 @@
 	},
 	"dependencies": {
 		"@3sixty/api-models": "next",
-		"@3sixty/background-task-models": "0.20.0-next.1",
+		"@3sixty/background-task-models": "0.20.0-next.2",
 		"@3sixty/context": "next",
 		"@3sixty/core": "next",
 		"@3sixty/entity": "next",

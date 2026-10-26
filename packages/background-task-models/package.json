@@ -1,6 +1,6 @@
 {
 	"name": "@3sixty/background-task-models",
-	"version": "0.20.0-next.1",
+	"version": "0.20.0-next.2",
 	"description": "Defines shared contracts and status models for background task workflows",
 	"repository": {
 		"type": "git",

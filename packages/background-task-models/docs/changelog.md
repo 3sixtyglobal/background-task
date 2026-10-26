@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0-next.2](https://github.com/3sixtyglobal/background-task/compare/background-task-models-v0.20.0-next.1...background-task-models-v0.20.0-next.2) (2026-10-26)
+
+
+### Features
+
+* release to next [skip ci] ([#19](https://github.com/3sixtyglobal/background-task/issues/19)) ([c128b56](https://github.com/3sixtyglobal/background-task/commit/c128b565b67a525baa970a7ac1528ddc56cdd0b5))
+
 ## [0.20.0-next.1](https://github.com/3sixtyglobal/background-task/compare/background-task-models-v0.20.0-next.0...background-task-models-v0.20.0-next.1) (2026-10-23)
 
 
