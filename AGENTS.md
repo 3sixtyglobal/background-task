@@ -59,18 +59,26 @@ Always run `pnpm run format` before `pnpm run lint`. Work is not complete until 
 - File and folder names are enforced by `repo-structure.json`: camel case in `src` and `tests`, interfaces named `I*.ts`, kebab case elsewhere
 - Classes expose `public static readonly CLASS_NAME: string = nameof<ClassName>();` and use it as the source when throwing errors
 - Validate arguments with `Guards` and throw subclasses of `BaseError`, such as `GeneralError`, rather than plain `Error` or `RangeError`
+- In catch blocks, wrap the caught error in a `GeneralError` with the operation's locale key, such as `throw new GeneralError(MyService.CLASS_NAME, "addPolicyFailed", undefined, error)`. Only catch specific error types, such as `NotFoundError`, where the code deliberately handles them, and do not add helpers that pass typed errors through unchanged
 - Use the `Is.*` helpers from `@3sixty/core` rather than `typeof` comparisons, and the `BaseError` helpers rather than `instanceof` to check error types
 - Import from the concrete module file rather than a barrel, `.` or `/src` path, to avoid circular dependencies
 - Declare root level functions with `function` rather than assigning arrow functions to variables
 - Use union types rather than enums
 - Initialise class properties in the constructor rather than inline, and do not use definite assignment assertions such as `let x!: T`
+- Do not use private static methods in a class with instance members, make them private instance methods called with `this.`. Classes with only static members, such as helpers, may keep private static methods
+- In engine component initialisers, use `engineCore.getRegisteredInstanceTypeOptional(...)` only for options the constructed class resolves with `Factory.getIfExists`, otherwise use `engineCore.getRegisteredInstanceType(...)`, as the optional form hides missing required components
+- Resolve components in the constructor, so a missing component fails early when the node starts. Only resolve them lazily when they come from further up the dependency stack
+- When several components share an entity storage and call `initialiseEntityStorageConnector` with the same parameters, extract the call into a shared method so the partition ids and other settings cannot conflict
 - Do not use `object` as a parameter type, use a specific interface, type alias or generic constraint
 - Do not spread a conditional with an empty object branch to omit a property, use `{ prop: condition ? value : undefined }` instead
 - Do not read `process.env` or use `console` directly in package source, take configuration through options and log through the logging component
 - Export new public symbols from the package `src/index.ts`
-- Keep JSDoc brief, and encode any `<` or `>` in JSDoc as `&lt;` and `&gt;` so the documentation site builds
+- Keep JSDoc brief, and encode any `<` or `>` in JSDoc as `&lt;` and `&gt;` so the documentation site builds. Do not use `{@link ...}`, name the symbol in plain text instead, and do not add JSDoc stating that a property or parameter is unused
 - Do not prefix unused parameters with an underscore, or remove parameters required by an interface or callback signature
 - Await promises or handle them deliberately, and never swallow errors with an empty `catch`
+- Do not use the `void` operator, either to consume unused parameters or in front of async calls
+- Prefer `void` and `Promise<void>` return type annotations where appropriate
+- In database requests, retrieve only the properties needed, and page with a cursor rather than looping through a whole query when partial results will do
 
 Most of these rules are enforced by ESLint, so `pnpm run lint` reports any that are broken.
 
@@ -78,7 +86,7 @@ Most of these rules are enforced by ESLint, so `pnpm run lint` reports any that 
 
 Every source file starts with a licence header, one or more copyright lines followed by the SPDX line. The `header/header` lint rule enforces this.
 
-New files use the default header, with the current year:
+New files use the default header, with the current year, even when copied or ported from a file with a different header:
 
 ```ts
 // Copyright <year> 3Sixty Trade Ltd.
@@ -118,16 +126,20 @@ User facing text, including error messages, comes from `locales/en.json` in each
 - Be brief in code, comments, documentation and commit messages
 - Keep changes small and focused, without unrelated refactoring or formatting churn
 - Do not change exported types, method names, payload shapes or error contracts unless asked
+- Keep backwards compatibility: existing stored data works without manual steps, existing REST paths, payload shapes and status codes keep working, adding rather than renaming or removing, and existing configuration keeps its meaning. When a stored schema changes, migrate existing data in the package's `initSchema` if the package can handle it alone, or in `migration.ts` in `node-core` if it spans packages. Handle old data and requests alongside new ones rather than adding flags to switch legacy behaviour on or off, unless there is no other way. If a security fix must change a default, add an option that restores the old behaviour and call it out
 - Do not modify configuration files unless asked, so they stay consistent across all the repositories. This covers `eslint.config.js`, `eslint.config-custom.js`, `prettier.config.mjs`, `commitlint.config.mjs`, the markdownlint files, `repo-structure.json`, `pnpm-workspace.yaml`, the `tsconfig*.json`, `vitest.config.ts` and `typedoc.config.mjs` files, and the `.github` workflows. The exceptions are adding words to `cspell.json` and adding test services to `setup-test-env`
 - Do not disable lint rules, with comments or otherwise
-- Pin every new dependency to an exact version, and avoid adding runtime dependencies where existing ones suffice
+- Pin every new dependency to an exact version, and avoid adding runtime dependencies where existing ones suffice. When you add one, explain why the existing ones are not enough
+- Do not add TODO or FIXME markers unless asked
 - Do not commit generated output such as `dist`, `coverage` or `docs/reference`, which is regenerated by a separate workflow
 - Do not add a byte order mark to any file
 
 ## Git
 
+- Do not commit or push unless asked
 - Branch from `next` and target `next` with pull requests; `main` only receives releases
 - Branch names follow Conventional Branch, using the `feature/`, `bugfix/`, `hotfix/`, `chore/` or `release/` prefixes, with only lowercase letters, numbers, hyphens and dots after the prefix
 - Commit messages and pull request titles follow Conventional Commits, in the form `<type>: <description>`
 - Do not add AI attribution, such as "Generated with" lines or `Co-Authored-By` trailers, to commits, pull requests or issues
+- Do not put email addresses anywhere in a commit, including the subject, body and trailers
 - Releases, versions and changelogs are produced by the release workflows, so do not bump versions or edit changelogs by hand
