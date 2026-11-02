@@ -114,8 +114,16 @@ runs:
           if [ "$(node -p "require('./package.json').private === true")" = "true" ]; then
             echo "Package is marked as private, skipping publication"
           else
-            npm publish "$TARBALL" --registry "$LOCAL_REGISTRY" --tag "$NPM_TAG"
-            printf '%s\t%s\t%s\n' "$TARBALL" "$(node -p "require('./package.json').name")" "$(node -p "require('./package.json').version")" >> "$TARBALL_DIR/publish-order.txt"
+            PACKAGE_NAME="$(node -p "require('./package.json').name")"
+            PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+            # A version already on npm is served through the proxy, so a re-run skips
+            # it here and the npm step skips it too.
+            if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry "$LOCAL_REGISTRY" > /dev/null 2>&1; then
+              echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is already published, skipping the local registry"
+            else
+              npm publish "$TARBALL" --registry "$LOCAL_REGISTRY" --tag "$NPM_TAG"
+            fi
+            printf '%s\t%s\t%s\n' "$TARBALL" "$PACKAGE_NAME" "$PACKAGE_VERSION" >> "$TARBALL_DIR/publish-order.txt"
           fi
 
           cd "$GITHUB_WORKSPACE"
