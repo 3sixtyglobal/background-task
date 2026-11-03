@@ -1,4 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
+// Copyright 2026 3Sixty Trade Ltd.
 // SPDX-License-Identifier: Apache-2.0.
 import os from "node:os";
 import { isMainThread, threadId as workerThreadId } from "node:worker_threads";
@@ -19,6 +20,7 @@ import {
 	BaseError,
 	Coerce,
 	ComponentFactory,
+	DurationConstants,
 	Factory,
 	GeneralError,
 	Guards,
@@ -72,13 +74,13 @@ export class BackgroundTaskService implements IBackgroundTaskComponent, IHealthP
 	 * The default retry interval in milliseconds.
 	 * @internal
 	 */
-	private static readonly _DEFAULT_RETRY_INTERVAL: number = 5000;
+	private static readonly _DEFAULT_RETRY_INTERVAL: number = 5 * DurationConstants.MsPerSecond;
 
 	/**
 	 * The default cleanup interval in milliseconds.
 	 * @internal
 	 */
-	private static readonly _DEFAULT_CLEANUP_INTERVAL: number = 120000;
+	private static readonly _DEFAULT_CLEANUP_INTERVAL: number = 2 * DurationConstants.MsPerMinute;
 
 	/**
 	 * Default maximum number of dispatches for a single attempt.
@@ -90,19 +92,20 @@ export class BackgroundTaskService implements IBackgroundTaskComponent, IHealthP
 	 * The default worker shutdown timeout in milliseconds.
 	 * @internal
 	 */
-	private static readonly _DEFAULT_WORKER_SHUTDOWN_TIMEOUT: number = 5000;
+	private static readonly _DEFAULT_WORKER_SHUTDOWN_TIMEOUT: number =
+		5 * DurationConstants.MsPerSecond;
 
 	/**
 	 * Minimum time in milliseconds between maxSystemWorkerCountReached warnings for one type.
 	 * @internal
 	 */
-	private static readonly _CAP_REACHED_LOG_INTERVAL: number = 60000;
+	private static readonly _CAP_REACHED_LOG_INTERVAL: number = DurationConstants.MsPerMinute;
 
 	/**
 	 * Cap on the retry wait for a type blocked by the system worker cap.
 	 * @internal
 	 */
-	private static readonly _MAX_CAP_REACHED_WAIT: number = 5000;
+	private static readonly _MAX_CAP_REACHED_WAIT: number = 5 * DurationConstants.MsPerSecond;
 
 	/**
 	 * The timeout in milliseconds for a health-check task to complete.
@@ -278,7 +281,7 @@ export class BackgroundTaskService implements IBackgroundTaskComponent, IHealthP
 				options.config.cleanupInterval,
 				validationErrors,
 				undefined,
-				{ minValue: 5000 }
+				{ minValue: 5 * DurationConstants.MsPerSecond }
 			);
 		}
 		if (!Is.undefined(options?.config?.maxDispatchCount)) {

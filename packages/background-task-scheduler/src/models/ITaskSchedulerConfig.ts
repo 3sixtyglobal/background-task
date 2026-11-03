@@ -1,4 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
+// Copyright 2026 3Sixty Trade Ltd.
 // SPDX-License-Identifier: Apache-2.0.
 
 /**
@@ -6,7 +7,9 @@
  */
 export interface ITaskSchedulerConfig {
 	/**
-	 * The interval between checks for running tasks, defaults to 1 minute since that is the resolution of the tasks.
+	 * The interval in milliseconds between checks for tasks that are due. A task runs at the first check
+	 * after its time, so set this no longer than the shortest task interval, such as 1000 for tasks
+	 * that repeat every few seconds.
 	 * @default 60000
 	 */
 	intervalMs?: number;

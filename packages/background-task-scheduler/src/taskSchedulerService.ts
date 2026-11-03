@@ -1,11 +1,19 @@
 // Copyright 2024 IOTA Stiftung.
+// Copyright 2026 3Sixty Trade Ltd.
 // SPDX-License-Identifier: Apache-2.0.
 import type {
 	IScheduledTaskInfo,
 	IScheduledTaskTime,
 	ITaskSchedulerComponent
 } from "@3sixty/background-task-models";
-import { BaseError, ComponentFactory, Is } from "@3sixty/core";
+import {
+	BaseError,
+	ComponentFactory,
+	Duration,
+	DurationConstants,
+	DurationUnit,
+	Is
+} from "@3sixty/core";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
@@ -89,8 +97,9 @@ export class TaskSchedulerService implements ITaskSchedulerComponent {
 		this._tasks = {};
 		this._runningTasks = [];
 		this._started = false;
-		this._tickIntervalMs = options?.config?.intervalMs ?? 60 * 1000; // 1 minute
-		this._stalledTaskTimeoutMs = options?.config?.stalledTaskTimeoutMs ?? 5 * 60 * 1000; // 5 minutes
+		this._tickIntervalMs = options?.config?.intervalMs ?? DurationConstants.MsPerMinute;
+		this._stalledTaskTimeoutMs =
+			options?.config?.stalledTaskTimeoutMs ?? 5 * DurationConstants.MsPerMinute;
 	}
 
 	/**
@@ -153,7 +162,7 @@ export class TaskSchedulerService implements ITaskSchedulerComponent {
 			times: times.map(time => ({
 				...time,
 				nextTriggerTime: Is.empty(time.nextTriggerTime)
-					? this.calculateNextTriggerTime(time)
+					? this.calculateNextTriggerTime(time, Date.now())
 					: time.nextTriggerTime
 			})),
 			taskCallback
@@ -214,29 +223,35 @@ export class TaskSchedulerService implements ITaskSchedulerComponent {
 	/**
 	 * Calculate the next run time for a task based on its scheduled times.
 	 * @param time The times at which the task should be scheduled.
+	 * @param now The time to schedule from, the start of the check for a task that has just run, so
+	 * the time the run took does not push the next run past the following check.
 	 * @returns The update time with the next run.
 	 * @internal
 	 */
-	private calculateNextTriggerTime(time: IScheduledTaskTime): number {
+	private calculateNextTriggerTime(time: IScheduledTaskTime, now: number): number {
 		let nextTriggerTime = time.nextTriggerTime;
-		const dayMs = 24 * 60 * 60 * 1000;
-		const hourMs = 60 * 60 * 1000;
-		const minuteMs = 60 * 1000;
 
 		if (Is.empty(nextTriggerTime)) {
-			nextTriggerTime = Date.now();
+			nextTriggerTime = now;
 		}
 
-		let intervalMs = 0;
-		intervalMs += (time.intervalDays ?? 0) * dayMs;
-		intervalMs += (time.intervalHours ?? 0) * hourMs;
-		intervalMs += (time.intervalMinutes ?? 0) * minuteMs;
+		const intervalMs = Duration.toNumber(
+			{
+				years: 0,
+				months: 0,
+				weeks: 0,
+				days: time.intervalDays ?? 0,
+				hours: time.intervalHours ?? 0,
+				minutes: time.intervalMinutes ?? 0,
+				seconds: time.intervalSeconds ?? 0
+			},
+			DurationUnit.Milliseconds
+		);
 
 		if (intervalMs > 0) {
 			// Move to the next regular slot and, if that slot is already in the past,
 			// skip missed slots so the next trigger is strictly in the future.
 			nextTriggerTime += intervalMs;
-			const now = Date.now();
 			if (nextTriggerTime <= now) {
 				const intervalsToAdvance = Math.floor((now - nextTriggerTime) / intervalMs) + 1;
 				nextTriggerTime += intervalsToAdvance * intervalMs;
@@ -385,12 +400,13 @@ export class TaskSchedulerService implements ITaskSchedulerComponent {
 					if (
 						Is.empty(taskTime.intervalDays) &&
 						Is.empty(taskTime.intervalHours) &&
-						Is.empty(taskTime.intervalMinutes)
+						Is.empty(taskTime.intervalMinutes) &&
+						Is.empty(taskTime.intervalSeconds)
 					) {
 						taskTime.nextTriggerTime = undefined;
 					} else {
-						// Recalculate the next run time based on the current time and the intervals
-						taskTime.nextTriggerTime = this.calculateNextTriggerTime(taskTime);
+						// Recalculate the next run time based on the start of this check and the intervals
+						taskTime.nextTriggerTime = this.calculateNextTriggerTime(taskTime, now);
 					}
 				}
 			}

@@ -123,6 +123,63 @@ describe("TaskSchedulerService", () => {
 		expect(triggered).toEqual(true);
 	});
 
+	test("can schedule a one off task to run at a specific time with seconds interval", async () => {
+		const taskScheduler = new TaskSchedulerService({
+			config: {
+				intervalMs: 1000
+			}
+		});
+		await taskScheduler.start();
+
+		let triggered = false;
+		await taskScheduler.addTask(
+			"testTask",
+			[{ nextTriggerTime: Date.now() + 500, intervalSeconds: 30 }],
+			async () => {
+				triggered = true;
+			}
+		);
+
+		expect(triggered).toEqual(false);
+
+		await new Promise(resolve => setTimeout(resolve, 1500));
+
+		const taskInfo = await taskScheduler.tasksInfo();
+		expect(taskInfo.tasks).toEqual({
+			testTask: [
+				{
+					intervalSeconds: 30,
+					nextTriggerTime: 30500
+				}
+			]
+		});
+		expect(triggered).toEqual(true);
+	});
+
+	test("runs a task at the next check when its run takes longer than the gap to its next time", async () => {
+		const taskScheduler = new TaskSchedulerService({
+			config: {
+				intervalMs: 1000
+			}
+		});
+		await taskScheduler.start();
+
+		// Due just after each check, so a run of 300ms ends after its next time less a check.
+		let triggerCount = 0;
+		await taskScheduler.addTask(
+			"testTask",
+			[{ nextTriggerTime: Date.now() + 100, intervalSeconds: 1 }],
+			async () => {
+				triggerCount++;
+				await new Promise(resolve => setTimeout(resolve, 300));
+			}
+		);
+
+		await new Promise(resolve => setTimeout(resolve, 2600));
+
+		expect(triggerCount).toEqual(2);
+	});
+
 	test("can schedule a one off task to run at a specific time with hours interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
