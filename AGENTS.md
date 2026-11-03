@@ -51,6 +51,8 @@ Packages consume each other's built output, so build a dependency before testing
 
 To test against unreleased changes in a sibling repository, `pnpm run local-link <package-name>` links its local build into `node_modules`. Do not commit any changes this makes.
 
+After linking or unlinking, delete the `.vitest-cache` folders outside `node_modules/.pnpm`, as Vitest keeps transforms of the linked build and checks such as `toThrow(GeneralError)` then fail. Undo a link with `pnpm run local-link <package-name> unlink`, as `pnpm install` does not. Search tools that respect `.gitignore` skip `node_modules`, so check what a published package contains with `npm pack <package>@<version> --dry-run`.
+
 Always run `pnpm run format` before `pnpm run lint`. Work is not complete until `pnpm run quality` passes. If a command cannot be run, say which one and why. Never report an interrupted or timed out test run as passing.
 
 ## Code Conventions
