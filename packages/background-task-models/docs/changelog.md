@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0-next.3](https://github.com/3sixtyglobal/background-task/compare/background-task-models-v0.20.0-next.2...background-task-models-v0.20.0-next.3) (2026-11-03)
+
+
+### Features
+
+* add seconds interval to scheduled tasks ([#21](https://github.com/3sixtyglobal/background-task/issues/21)) ([7456821](https://github.com/3sixtyglobal/background-task/commit/74568211a3e988f18525d52344f322a83c46477b))
+
 ## [0.20.0-next.2](https://github.com/3sixtyglobal/background-task/compare/background-task-models-v0.20.0-next.1...background-task-models-v0.20.0-next.2) (2026-10-26)
 
 
