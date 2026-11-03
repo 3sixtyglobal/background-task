@@ -42,7 +42,7 @@
 		"@3sixty/nameof-transformer": "next",
 		"@3sixty/nameof-vitest-plugin": "next",
 		"@3sixty/validate-locales": "next",
-		"@types/node": "26.6.5",
+		"@types/node": "26.6.6",
 		"@vitest/coverage-v8": "5.0.5",
 		"concurrently": "10.0.6",
 		"nodemon": "3.1.14",

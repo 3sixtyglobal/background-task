@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import { DurationConstants } from "@3sixty/core";
 import { MemoryEntityStorageConnector } from "@3sixty/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@3sixty/entity-storage-models";
 import { nameof } from "@3sixty/nameof";
@@ -48,7 +49,7 @@ describe("TaskSchedulerService", () => {
 	test("can schedule a one off task to run at a specific time with no interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -68,7 +69,7 @@ describe("TaskSchedulerService", () => {
 		});
 		expect(triggered).toEqual(false);
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 
 		const taskInfo2 = await taskScheduler.tasksInfo();
 		expect(taskInfo2.tasks).toEqual({
@@ -84,7 +85,7 @@ describe("TaskSchedulerService", () => {
 	test("can schedule a one off task to run at a specific time with minutes interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -126,7 +127,7 @@ describe("TaskSchedulerService", () => {
 	test("can schedule a one off task to run at a specific time with seconds interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -159,7 +160,7 @@ describe("TaskSchedulerService", () => {
 	test("runs a task at the next check when its run takes longer than the gap to its next time", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -183,7 +184,7 @@ describe("TaskSchedulerService", () => {
 	test("can schedule a one off task to run at a specific time with hours interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -225,7 +226,7 @@ describe("TaskSchedulerService", () => {
 	test("can schedule a one off task to run at a specific time with days interval", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -267,7 +268,7 @@ describe("TaskSchedulerService", () => {
 	test("can remove a task", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -286,17 +287,17 @@ describe("TaskSchedulerService", () => {
 			testTask: [
 				{
 					intervalMinutes: 1,
-					nextTriggerTime: 60000
+					nextTriggerTime: DurationConstants.MsPerMinute
 				}
 			]
 		});
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 		expect(triggerCount).toEqual(1);
 
 		await taskScheduler.removeTask("testTask");
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 
 		const taskInfo2 = await taskScheduler.tasksInfo();
 		expect(taskInfo2.tasks).toEqual({});
@@ -306,7 +307,7 @@ describe("TaskSchedulerService", () => {
 	test("can remove a task during a callback", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -324,7 +325,7 @@ describe("TaskSchedulerService", () => {
 		const taskInfo = await taskScheduler.tasksInfo();
 		expect(taskInfo.tasks).toEqual({});
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 		expect(triggerCount).toEqual(1);
 
 		const taskInfo2 = await taskScheduler.tasksInfo();
@@ -340,7 +341,7 @@ describe("TaskSchedulerService", () => {
 		});
 		await taskScheduler.start();
 
-		const threeMinutesMs = 3 * 60 * 1000;
+		const threeMinutesMs = 3 * DurationConstants.MsPerMinute;
 		let triggerCount = 0;
 		await taskScheduler.addTask(
 			"testTask",
@@ -367,7 +368,7 @@ describe("TaskSchedulerService", () => {
 			testTask: [
 				{
 					intervalMinutes: 1,
-					nextTriggerTime: 60000
+					nextTriggerTime: DurationConstants.MsPerMinute
 				}
 			]
 		});
@@ -376,7 +377,7 @@ describe("TaskSchedulerService", () => {
 	test("can throw an error in a task and continue", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
@@ -394,7 +395,7 @@ describe("TaskSchedulerService", () => {
 			]
 		});
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 
 		const taskInfo2 = await taskScheduler.tasksInfo();
 		expect(taskInfo2.tasks).toEqual({
@@ -558,14 +559,18 @@ describe("TaskSchedulerService", () => {
 	test("does not clear in-progress locks that were not started by this scheduler", async () => {
 		const taskScheduler = new TaskSchedulerService({
 			config: {
-				intervalMs: 1000
+				intervalMs: DurationConstants.MsPerSecond
 			}
 		});
 		await taskScheduler.start();
 
-		await taskScheduler.addTask("testTask", [{ nextTriggerTime: Date.now() + 60000 }], async () => {
-			// No op
-		});
+		await taskScheduler.addTask(
+			"testTask",
+			[{ nextTriggerTime: Date.now() + DurationConstants.MsPerMinute }],
+			async () => {
+				// No op
+			}
+		);
 
 		const lockTime = Date.now();
 		await scheduledTaskEntityStorageConnector.set({

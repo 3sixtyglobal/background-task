@@ -6,7 +6,14 @@ import type { IHealth } from "@3sixty/api-models";
 import type { IBackgroundTask } from "@3sixty/background-task-models";
 import { TaskStatus } from "@3sixty/background-task-models";
 import { ContextIdKeys, ContextIdStore, type IContextIds } from "@3sixty/context";
-import { ComponentFactory, Converter, Factory, Is, RandomHelper } from "@3sixty/core";
+import {
+	ComponentFactory,
+	Converter,
+	DurationConstants,
+	Factory,
+	Is,
+	RandomHelper
+} from "@3sixty/core";
 import {
 	EntitySchemaFactory,
 	EntitySchemaHelper,
@@ -703,7 +710,7 @@ describe("BackgroundTaskService", () => {
 
 	test("can create a task and cancel it", async () => {
 		const backgroundTaskConnector = makeService({
-			config: { taskInterval: 1000 }
+			config: { taskInterval: DurationConstants.MsPerSecond }
 		});
 
 		await backgroundTaskConnector.start();
@@ -754,7 +761,7 @@ describe("BackgroundTaskService", () => {
 
 	test("can cleanup retained items when passed their retained date", async () => {
 		const backgroundTaskConnector = makeService({
-			config: { taskInterval: 1000 }
+			config: { taskInterval: DurationConstants.MsPerSecond }
 		});
 
 		const now = Date.now();
@@ -762,8 +769,8 @@ describe("BackgroundTaskService", () => {
 			id: "00000000000000000000000000000000",
 			type: "my-type",
 			threadId: "main",
-			dateCreated: new Date(now - 1000).toISOString(),
-			dateModified: new Date(now - 1000).toISOString(),
+			dateCreated: new Date(now - DurationConstants.MsPerSecond).toISOString(),
+			dateModified: new Date(now - DurationConstants.MsPerSecond).toISOString(),
 			retryInterval: 10000,
 			retainFor: 10000,
 			status: "success",
@@ -782,7 +789,7 @@ describe("BackgroundTaskService", () => {
 
 	test("can not cleanup retained items when their retained date has not yet passed", async () => {
 		const backgroundTaskConnector = makeService({
-			config: { taskInterval: 1000 }
+			config: { taskInterval: DurationConstants.MsPerSecond }
 		});
 
 		const now = Date.now();
@@ -804,7 +811,7 @@ describe("BackgroundTaskService", () => {
 
 		await backgroundTaskConnector.start();
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 
 		const store = await backgroundTaskEntityStorageConnector.getStore();
 		expect(store.length).toEqual(1);
@@ -812,7 +819,7 @@ describe("BackgroundTaskService", () => {
 
 	test("can not cleanup retained items when no retained date set", async () => {
 		const backgroundTaskConnector = makeService({
-			config: { taskInterval: 1000 }
+			config: { taskInterval: DurationConstants.MsPerSecond }
 		});
 
 		const now = Date.now();
@@ -839,7 +846,7 @@ describe("BackgroundTaskService", () => {
 
 	test("can start a clone of the engine in the background task", async () => {
 		const backgroundTaskConnector = makeService({
-			config: { taskInterval: 1000 }
+			config: { taskInterval: DurationConstants.MsPerSecond }
 		});
 
 		Factory.createFactory<{ getCloneData: () => unknown }>("engine-core").register(
@@ -1202,7 +1209,7 @@ describe("BackgroundTaskService", () => {
 			await backgroundTaskConnector.create(
 				"my-type",
 				{ counter: i },
-				{ retainFor: numberItems * 1000 }
+				{ retainFor: numberItems * DurationConstants.MsPerSecond }
 			);
 		}
 
@@ -1439,7 +1446,8 @@ describe("BackgroundTaskService", () => {
 					// Backdate the last-logged time as if the rate-limit window had already
 					// elapsed, so the next check logs again instead of waiting a real minute;
 					// this is what proves the limit is time-based, not "once per type ever".
-					serviceInternals._taskHandlers.C.capReachedLastLoggedMs = Date.now() - 60_000;
+					serviceInternals._taskHandlers.C.capReachedLastLoggedMs =
+						Date.now() - DurationConstants.MsPerMinute;
 					await waitForFilteredSpyCallCount(scheduleSpy, "C", 5);
 
 					expect(stalledEntries()).toHaveLength(2);
@@ -2091,7 +2099,11 @@ describe("BackgroundTaskService", () => {
 			await backgroundTaskService.start();
 
 			// Long enough that a resumed first task would hold the only worker for the whole test.
-			await backgroundTaskService.create("starvation-type", { ms: 60_000 }, { retainFor: 10_000 });
+			await backgroundTaskService.create(
+				"starvation-type",
+				{ ms: DurationConstants.MsPerMinute },
+				{ retainFor: 10 * DurationConstants.MsPerSecond }
+			);
 			await waitForStatus("processing", 0);
 
 			await backgroundTaskService.create("starvation-type", { ms: 10 }, { retainFor: 10_000 });
@@ -2450,7 +2462,7 @@ describe("BackgroundTaskService", () => {
 			await backgroundTaskService.create("held-claim-type", { counter: 0 }, { retainFor: 10_000 });
 
 			// Well past the retry interval, so a re-dispatch would have happened by now.
-			await new Promise(resolve => setTimeout(resolve, 1000));
+			await new Promise(resolve => setTimeout(resolve, DurationConstants.MsPerSecond));
 
 			expect(transitions.filter(status => status === TaskStatus.Processing)).toHaveLength(1);
 			expect(logEntries.filter(entry => entry.message === "taskClaimRetained")).toHaveLength(1);
@@ -2569,7 +2581,7 @@ describe("BackgroundTaskService", () => {
 				retainFor: 10_000,
 				dateCreated: new Date(Date.now()).toISOString(),
 				dateModified: new Date(Date.now()).toISOString(),
-				dateNextProcess: new Date(Date.now() + 60_000).toISOString()
+				dateNextProcess: new Date(Date.now() + DurationConstants.MsPerMinute).toISOString()
 			};
 			await backgroundTaskEntityStorageConnector.set(stuckTask);
 

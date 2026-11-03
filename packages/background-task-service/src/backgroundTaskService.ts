@@ -111,7 +111,7 @@ export class BackgroundTaskService implements IBackgroundTaskComponent, IHealthP
 	 * The timeout in milliseconds for a health-check task to complete.
 	 * @internal
 	 */
-	private static readonly _HEALTH_CHECK_TASK_TIMEOUT: number = 30_000;
+	private static readonly _HEALTH_CHECK_TASK_TIMEOUT: number = 30 * DurationConstants.MsPerSecond;
 
 	/**
 	 * Reserved task type key used by the built-in health-check handler.
