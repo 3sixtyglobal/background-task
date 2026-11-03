@@ -1,4 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
+// Copyright 2026 3Sixty Trade Ltd.
 // SPDX-License-Identifier: Apache-2.0.
 
 /**
@@ -24,4 +25,9 @@ export interface IScheduledTaskTime {
 	 * The interval in minutes to repeat the task, if no intervals are set the task will not repeat.
 	 */
 	intervalMinutes?: number;
+
+	/**
+	 * The interval in seconds to repeat the task, if no intervals are set the task will not repeat.
+	 */
+	intervalSeconds?: number;
 }
