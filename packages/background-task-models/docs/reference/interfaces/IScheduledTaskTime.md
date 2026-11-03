@@ -33,3 +33,11 @@ The interval in hours to repeat the task, if no intervals are set the task will 
 > `optional` **intervalMinutes?**: `number`
 
 The interval in minutes to repeat the task, if no intervals are set the task will not repeat.
+
+***
+
+### intervalSeconds? {#intervalseconds}
+
+> `optional` **intervalSeconds?**: `number`
+
+The interval in seconds to repeat the task, if no intervals are set the task will not repeat.
