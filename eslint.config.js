@@ -282,6 +282,10 @@ const tsRestrictedSyntaxCommon = [
 			"Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression']",
 		message:
 			'Do not define root-level functions using variable assignments. Use a function declaration instead.'
+	},
+	{
+		selector: String.raw`Literal[value=/^(application|audio|font|image|model|multipart|text|video)\/[\w.+-]+$/]`,
+		message: 'Use the MimeTypes constants from @3sixty/web instead of literal MIME type strings.'
 	}
 ];
 
@@ -336,11 +340,17 @@ const tsRestrictedSyntax = [
 			'ObjectExpression > SpreadElement > ConditionalExpression[alternate.type="ObjectExpression"][alternate.properties.length=0]',
 		message:
 			'Avoid spreading a conditional where one branch is an empty object to omit properties. Use a property with a conditional value instead: { prop: condition ? value : undefined }.'
+	},
+	{
+		selector:
+			':matches(TSPropertySignature, PropertyDefinition) > TSTypeAnnotation > TSUnionType > TSUndefinedKeyword',
+		message:
+			'Declare a property that may be missing as optional, name?: T, not name: T | undefined.'
 	}
 ];
 
 const tsRules = {
-	'no-empty': 'off',
+	'no-empty': 'error',
 	'no-redeclare': 'off',
 	'no-restricted-syntax': ['error', ...tsRestrictedSyntaxCommon, ...tsRestrictedSyntax],
 	'no-undef': ['off'],
@@ -366,6 +376,11 @@ const tsRules = {
 	'@typescript-eslint/naming-convention': [
 		'error',
 		{ selector: 'variable', format: ['camelCase', 'UPPER_CASE'] },
+		{
+			selector: 'variable',
+			modifiers: ['const', 'global', 'exported'],
+			format: ['camelCase', 'UPPER_CASE', 'PascalCase']
+		},
 		{ selector: 'enumMember', format: ['PascalCase'] },
 		{
 			selector: 'method',
@@ -651,6 +666,24 @@ const jsDocRules = {
 	'jsdoc/require-throws': 'error',
 	'jsdoc/require-yields': 'error',
 	'jsdoc/require-yields-check': 'error',
+	'jsdoc/text-escaping': ['error', { escapeHTML: true }],
+	'jsdoc/no-restricted-syntax': [
+		'error',
+		{
+			contexts: [
+				{
+					comment: 'JsdocBlock:has(JsdocInlineTag[tag="link"])',
+					context: 'any',
+					message: 'Do not use {@link ...}, name the symbol in plain text instead.'
+				},
+				{
+					comment: String.raw`JsdocBlock:has(JsdocTag[tag=/^returns?$/][description=/^(Promise|void)\b|^\w+(<|&lt;)/])`,
+					context: 'any',
+					message: 'Do not put the return type in @returns, describe the value instead.'
+				}
+			]
+		}
+	],
 	'jsdoc/valid-types': 'error'
 };
 
@@ -808,12 +841,24 @@ const config = [
 			'no-restricted-imports': 'off'
 		}
 	},
+	// The MimeTypes constants define the literal MIME type strings.
+	{
+		files: ['**/src/models/mimeTypes.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				...tsRestrictedSyntaxCommon.filter(rule => !rule.message.startsWith('Use the MimeTypes')),
+				...tsRestrictedSyntax
+			]
+		}
+	},
 	// Test files
 	{
 		files: ['**/tests/**/*.ts'],
 		rules: {
 			'max-classes-per-file': 'off',
 			'no-console': 'off',
+			'no-empty': 'off',
 			'jsdoc/require-jsdoc': 'off',
 			'unicorn/consistent-function-scoping': 'off',
 			'unicorn/no-useless-undefined': 'off',

@@ -57,48 +57,7 @@ Always run `pnpm run format` before `pnpm run lint`. Work is not complete until 
 
 ## Code Conventions
 
-- TypeScript ES modules only, with `.js` extensions on relative imports
-- File and folder names are enforced by `repo-structure.json`: camel case in `src` and `tests`, interfaces named `I*.ts`, kebab case elsewhere
-- Classes expose `public static readonly CLASS_NAME: string = nameof<ClassName>();` and use it as the source when throwing errors
-- Validate arguments with `Guards` and throw subclasses of `BaseError`, such as `GeneralError`, rather than plain `Error` or `RangeError`
-- In catch blocks, wrap the caught error in a `GeneralError` with the operation's locale key, such as `throw new GeneralError(MyService.CLASS_NAME, "addPolicyFailed", undefined, error)`. Only catch specific error types, such as `NotFoundError`, where the code deliberately handles them, and do not add helpers that pass typed errors through unchanged
-- Use the `Is.*` helpers from `@3sixty/core` rather than `typeof` comparisons, and the `BaseError` helpers rather than `instanceof` to check error types
-- Import from the concrete module file rather than a barrel, `.` or `/src` path, to avoid circular dependencies
-- Declare root level functions with `function` rather than assigning arrow functions to variables
-- Use union types rather than enums
-- Initialise class properties in the constructor rather than inline, and do not use definite assignment assertions such as `let x!: T`
-- Do not use private static methods in a class with instance members, make them private instance methods called with `this.`. Classes with only static members, such as helpers, may keep private static methods
-- In engine component initialisers, use `engineCore.getRegisteredInstanceType(...)` for every dependency the constructed class resolves with `Factory.get`, and `engineCore.getRegisteredInstanceTypeOptional(...)` only for those it resolves with `Factory.getIfExists`, as the optional form hides missing required components
-- Resolve every component, connector and entity storage a class depends on with `Factory.get` in the constructor and keep it in a field that is not optional, so a missing dependency fails when the node starts rather than on a later request. Use `Factory.getIfExists` only for a dependency the class works fully without, such as logging, telemetry or the tenant admin component that only multi-tenant nodes register, and never fall back to skipping work, such as removing data or checking a role, because a dependency is missing
-- Do not resolve a dependency lazily in a method because it is created later in the engine. Move its entry earlier in `coreTypeInitialisers.json` or `serverTypeInitialisers.json`, which set the order components are constructed in, or initialise the entity storage it needs in the initialiser of the component that uses it
-- Create every object a class depends on, such as another service it delegates to, in the constructor and keep it in a `readonly` field. Do not add a private method that creates or looks it up on first use, such as `private accountService(): AccountService { this._accountService ??= new AccountService(); ... }`
-- Do not copy a `readonly` field into a local only to use it, such as `const identityComponent = this._identityComponent;`, use the field. A local is only for a value that can change while the method runs, such as a field set in `start()`, or for narrowing an optional field
-- Do not pass a class's own fields to its own methods, such as `this.adoptCreated(this._identityComponent, accountId)`, the method reads `this._identityComponent` itself. A parameter is only for a value that differs between calls, such as a template id or which of several entity storages to use, or for the narrowed value of an optional field
-- Do not add a method whose body is a single call to another method, such as `private async getRoles(accountId) { return this._authorizationComponent.getRolesForSubject(this._authorizationModelId, accountId); }`, make the call where it is needed. A method that holds logic of its own, such as a loop, a condition or a try block, is not a wrapper
-- Take a lock inline, with `const lockKey = ...; await Mutex.lock(lockKey, { throwOnTimeout: true }); try { ... } finally { Mutex.unlock(lockKey); }` in the method that needs it. Build a lock key that is used in more than one place with a static helper method, such as `AccountDataHelper.didLockKey(identity)`, and do not add a method that runs a callback under a lock, such as `withLock(key, method)`
-- Compare objects or use them as keys with `JsonHelper.canonicalize(value)`, not `JSON.stringify(value)`, so the same object with its properties in a different order matches
-- Declare a property that may be missing as optional, `name?: T`, not `name: T | undefined`, in classes, interfaces and inline object types alike, such as `private readonly _authorizationModelId?: string` or `{ identity?: string }`. Use `T | undefined` only for a parameter or return type, and give a property that always has a value, such as one with a default, its plain type
-- Use the `MimeTypes` constants from `@3sixty/web`, such as `MimeTypes.Jpeg`, rather than literal MIME type strings such as `"image/jpeg"`
-- Use the `DurationConstants` from `@3sixty/core` for common time values, such as `DurationConstants.MsPerSecond` or `DurationConstants.MsPerMinute`, rather than literal numbers or arithmetic such as `1000` or `60 * 1000`
-- Declare method parameters and return values with the real types, such as `Promise<IJsonLdNodeObject[]>` or `IOrganizationProfileUpdate`, not with the body of a request or response model, such as `IAccountPublicDataGetResponse["body"]`. Keep the request and response models for typing routes and REST client calls
-- Identify the resource a route acts on in its path, such as `DELETE /authentication/account/organization/request/:organization`, not in a query parameter. Keep query parameters for filtering, sorting and paging a list, and remember `organization` in the query selects the tenant on a multi-tenant node
-- Write a default factory type name inline where it is used, such as `options?.organizationEntityStorageType ?? "organization"`, rather than defining a constant for it
-- Use optional chaining to read a property of a value that is typed as an object or `undefined`, such as `config?.emailLocale ?? "en"` or `user?.accountId === accountId`, rather than `Is.object(user) && user.accountId === accountId`. Keep `Is.object` for narrowing a value typed `unknown`, or where the object itself is used afterwards, such as passing it to a method
-- When several components share an entity storage and call `initialiseEntityStorageConnector` with the same parameters, extract the call into a shared method so the partition ids and other settings cannot conflict
-- Do not use `object` as a parameter type, use a specific interface, type alias or generic constraint
-- Do not spread a conditional with an empty object branch to omit a property, use `{ prop: condition ? value : undefined }` instead
-- Do not read `process.env` or use `console` directly in package source, take configuration through options and log through the logging component
-- Export new public symbols from the package `src/index.ts`
-- Keep JSDoc brief, and encode any `<` or `>` in JSDoc as `&lt;` and `&gt;` so the documentation site builds. Do not use `{@link ...}`, name the symbol in plain text instead, and do not add JSDoc stating that a property or parameter is unused
-- Do not prefix unused parameters with an underscore, or remove parameters required by an interface or callback signature
-- Await promises or handle them deliberately, and never swallow errors with an empty `catch`
-- Do not use the `void` operator, either to consume unused parameters or in front of async calls
-- Prefer `void` and `Promise<void>` return type annotations where appropriate
-- In database requests, retrieve only the properties needed, and page with a cursor rather than looping through a whole query when partial results will do. Pass the property list to `query`, such as `["id", "accountId"]` when collecting ids to remove, rather than reading whole entities, and do not call a helper that reads and converts whole entities when only a few properties are used
-- Rely on the query condition to select the matching entities, do not check the results again with a secondary `.filter`, `.find` or `.some` on the same properties, such as `.filter(request => request.accountId === accountId)` after a query on `accountId`. When only one match is needed, query with a limit of 1 rather than reading pages until a match is found
-- Keep REST clients free of logic: each method guards its arguments and makes a single `fetch` to a matching route, without combining calls, building query conditions or throwing errors of its own. Convert values for the request and response with `HttpParameterHelper` and `Coerce`, such as `HttpParameterHelper.objectToString(conditions)` or `Coerce.string(limit)`, and read response headers with `HttpHeaderHelper.extractId` and `HttpHeaderHelper.extractCursor`, rather than by hand. When a component method has no route, add the route and its request model on the server rather than emulating it in the client
-
-Most of these rules are enforced by ESLint, so `pnpm run lint` reports any that are broken.
+The code conventions, including the rules for changing exported APIs, backwards compatibility and lint, are in [.claude/rules/code-conventions.md](./.claude/rules/code-conventions.md), read it before changing code in `src` or `tests`. ESLint enforces the rest, so `pnpm run lint` reports any that are broken.
 
 ## Licence Headers
 
@@ -144,21 +103,16 @@ User facing text, including error messages, comes from `locales/en.json` in each
 - Be brief in code, comments, documentation and commit messages
 - Never use the term shapes, call them models, in code, comments and documentation
 - Keep changes small and focused, without unrelated refactoring or formatting churn
-- Do not change exported types, method names, payload shapes or error contracts unless asked
-- Keep backwards compatibility: existing stored data works without manual steps, existing REST paths, payload shapes and status codes keep working, adding rather than renaming or removing, and existing configuration keeps its meaning. When a stored schema changes, migrate existing data in the package's `initSchema` if the package can handle it alone, or in `migration.ts` in `node-core` if it spans packages. Handle old data and requests alongside new ones rather than adding flags to switch legacy behaviour on or off, unless there is no other way. If a security fix must change a default, add an option that restores the old behaviour and call it out
 - Do not modify configuration files unless asked, so they stay consistent across all the repositories. This covers `eslint.config.js`, `eslint.config-custom.js`, `prettier.config.mjs`, `commitlint.config.mjs`, the markdownlint files, `repo-structure.json`, `pnpm-workspace.yaml`, the `tsconfig*.json`, `vitest.config.ts` and `typedoc.config.mjs` files, and the `.github` workflows. The exceptions are adding words to `cspell.json` and adding test services to `setup-test-env`
-- Do not disable lint rules, with comments or otherwise
 - Pin every new dependency to an exact version, and avoid adding runtime dependencies where existing ones suffice. When you add one, explain why the existing ones are not enough
-- Do not add TODO or FIXME markers unless asked
 - Do not commit generated output such as `dist`, `coverage` or `docs/reference`, which is regenerated by a separate workflow
 - Do not add a byte order mark to any file
 
 ## Git
 
+Before creating a branch, committing or opening a pull request, read [Branch Management](./CONTRIBUTING.md#branch-management), [Commit Standards](./CONTRIBUTING.md#commit-standards) and [Pull Request Process](./CONTRIBUTING.md#pull-request-process) in CONTRIBUTING. The git hooks check branch names and commit messages. The pull request and issue templates are shared by every repository, from [3sixtyglobal/.github](https://github.com/3sixtyglobal/.github), so fill in the template when writing one.
+
 - Do not commit or push unless asked
-- Branch from `next` and target `next` with pull requests; `main` only receives releases
-- Branch names follow Conventional Branch, using the `feature/`, `bugfix/`, `hotfix/`, `chore/` or `release/` prefixes, with only lowercase letters, numbers, hyphens and dots after the prefix
-- Commit messages and pull request titles follow Conventional Commits, in the form `<type>: <description>`
 - Do not add AI attribution, such as "Generated with" lines or `Co-Authored-By` trailers, to commits, pull requests or issues
 - Do not put email addresses anywhere in a commit, including the subject, body and trailers
-- Releases, versions and changelogs are produced by the release workflows, so do not bump versions or edit changelogs by hand
+- Do not bump versions or edit changelogs by hand, the release workflows produce them

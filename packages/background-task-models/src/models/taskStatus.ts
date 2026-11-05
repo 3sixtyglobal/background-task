@@ -4,7 +4,6 @@
 /**
  * Task statuses.
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const TaskStatus = {
 	/**
 	 * Pending.

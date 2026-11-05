@@ -9,7 +9,7 @@ import type { TaskStatus } from "./taskStatus.js";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface IBackgroundTask<T = any, U = any> {
 	/**
-	 * The id in URN form e.g. `background-task:<namespace>:<entity-id>`.
+	 * The id in URN form e.g. `background-task:&lt;namespace&gt;:&lt;entity-id&gt;`.
 	 */
 	id: string;
 
