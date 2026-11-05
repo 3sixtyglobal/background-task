@@ -10,6 +10,7 @@
 	"author": "martyn.janes@iota.org",
 	"license": "Apache-2.0",
 	"type": "module",
+	"sideEffects": false,
 	"engines": {
 		"node": ">=24.0.0",
 		"bun": ">=1.4.4"
