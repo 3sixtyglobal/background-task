@@ -246,7 +246,8 @@ const stylisticJsRules = {
 const customLintRules = {
 	'@3sixty/no-multiple-declarations': 'error',
 	'@3sixty/no-deep-type-nesting': 'error',
-	'@3sixty/require-internal-on-private-methods': 'error'
+	'@3sixty/require-internal-on-private-methods': 'error',
+	'@3sixty/class-name-nameof': 'error'
 };
 
 const tsRestrictedSyntaxCommon = [
