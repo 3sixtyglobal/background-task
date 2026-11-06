@@ -12,16 +12,12 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
-      # Clone the repository to the runner for its commitlint configuration
-      - name: Checkout
-        uses: actions/checkout@v6
-
       # The runner image has Node.js and npm, so npx fetches just the current linter and the
-      # config the commitlint configuration extends, and the workspace is never installed. The
-      # title is passed through the environment rather than interpolated into the script, so it
-      # cannot be executed by the shell.
+      # conventional commit rules, and no checkout or install is needed. The title is passed
+      # through the environment rather than interpolated into the script, so it cannot be
+      # executed by the shell.
       - name: Lint PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          printf '%s' "$PR_TITLE" | npx --yes --package @commitlint/cli --package @commitlint/config-conventional commitlint
+          printf '%s' "$PR_TITLE" | npx --yes --package @commitlint/cli --package @commitlint/config-conventional commitlint --extends @commitlint/config-conventional
