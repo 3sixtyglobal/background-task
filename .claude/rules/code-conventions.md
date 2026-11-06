@@ -38,6 +38,7 @@ Rules that ESLint enforces are not repeated here, `pnpm run lint` reports them.
 - Write a default factory type name inline where it is used, such as `options?.organizationEntityStorageType ?? "organization"`, rather than defining a constant for it
 - Use optional chaining to read a property of a value that is typed as an object or `undefined`, such as `config?.emailLocale ?? "en"` or `user?.accountId === accountId`, rather than `Is.object(user) && user.accountId === accountId`. Keep `Is.object` for narrowing a value typed `unknown`, or where the object itself is used afterwards, such as passing it to a method
 - Check for arrays with `Is.array(value)`, or `Is.arrayValue(value)` when it must not be empty, rather than `Array.isArray(value)`
+- Build an object with a fixed set of properties as an object literal, quoting names that need it, such as `{ "access_token": session.token, "token_type": "Bearer" }`, rather than with `Object.fromEntries` on a list of entries cast to the type, such as `Object.fromEntries([["access_token", session.token]]) as IOAuthAccessToken`
 - When several components share an entity storage and call `initialiseEntityStorageConnector` with the same parameters, extract the call into a shared method so the partition ids and other settings cannot conflict
 - Export new public symbols from the package `src/index.ts`
 - Keep JSDoc brief, encode `>` as `&gt;` as well as `<`, and do not add JSDoc stating that a property or parameter is unused
