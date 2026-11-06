@@ -1,4 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
+// Copyright 2026 3Sixty Trade Ltd.
 // SPDX-License-Identifier: Apache-2.0.
 /* eslint-disable import/namespace */
 /* eslint-disable import/default */
@@ -177,6 +178,7 @@ const jsRules = {
 	'no-useless-return': 'error',
 	'no-var': 'error',
 	'no-void': 'error',
+	'no-warning-comments': ['error', { terms: ['todo', 'fixme'] }],
 	'no-whitespace-before-property': 'error',
 	'no-with': 'error',
 	'nonblock-statement-body-position': 'error',
@@ -349,10 +351,22 @@ const tsRestrictedSyntax = [
 	}
 ];
 
+const tsRestrictedSyntaxSource = [
+	{
+		selector: ':matches(TSInterfaceDeclaration, TSTypeAliasDeclaration)',
+		message: 'Declare interfaces and type aliases one per file in a models folder.'
+	}
+];
+
 const tsRules = {
 	'no-empty': 'error',
 	'no-redeclare': 'off',
-	'no-restricted-syntax': ['error', ...tsRestrictedSyntaxCommon, ...tsRestrictedSyntax],
+	'no-restricted-syntax': [
+		'error',
+		...tsRestrictedSyntaxCommon,
+		...tsRestrictedSyntax,
+		...tsRestrictedSyntaxSource
+	],
 	'no-undef': ['off'],
 	'no-unused-vars': ['off'],
 	'@typescript-eslint/adjacent-overload-signatures': 'error',
@@ -414,9 +428,15 @@ const tsRules = {
 			selector: 'parameter',
 			format: ['camelCase'],
 			leadingUnderscore: 'forbid'
+		},
+		{
+			selector: 'interface',
+			format: ['PascalCase'],
+			custom: { regex: '^I[A-Z]', match: true }
 		}
 	],
 	'@typescript-eslint/no-array-constructor': 'error',
+	'@typescript-eslint/no-deprecated': 'error',
 	'@typescript-eslint/require-await': 'off',
 	'@typescript-eslint/no-base-to-string': 'error',
 	'@typescript-eslint/no-dupe-class-members': 'error',
@@ -484,7 +504,7 @@ const headerRules = {
 		'line',
 		{
 			pattern:
-				'^( Copyright \\d{4} (IOTA Stiftung|3Sixty Trade Ltd)\\.\\r?\\n)+ SPDX-License-Identifier: Apache-2\\.0\\.(\\r?\\n|$)'
+				'^( Copyright \\d{4} (IOTA Stiftung|3Sixty Trade Ltd)\\.(\\r?\\n|$))+( SPDX-License-Identifier: Apache-2\\.0\\.(\\r?\\n|$))?'
 		}
 	]
 };
@@ -839,6 +859,13 @@ const config = [
 		files: ['**/bin/index.js'],
 		rules: {
 			'no-restricted-imports': 'off'
+		}
+	},
+	// Models folders and ambient declarations are where interfaces and type aliases belong.
+	{
+		files: ['**/src/models/**/*.ts', '**/*.d.ts'],
+		rules: {
+			'no-restricted-syntax': ['error', ...tsRestrictedSyntaxCommon, ...tsRestrictedSyntax]
 		}
 	},
 	// The MimeTypes constants define the literal MIME type strings.
