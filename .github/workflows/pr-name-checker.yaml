@@ -9,32 +9,19 @@ jobs:
     # Release-please PRs are skipped here rather than via [skip ci], because the
     # production release PR's closed event must still trigger publishing.
     if: ${{ !startsWith(github.head_ref, 'release-please--') && (github.event.action != 'edited' || github.event.changes.title != null) }}
-    runs-on: ${{ github.event.repository.private && fromJSON('{"group":"3sixty","labels":"self-hosted-small"}') || 'ubuntu-latest' }}
+    runs-on: ubuntu-slim
 
     steps:
-      # Clone the repository to the runner
+      # Clone the repository to the runner for its commitlint configuration
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Setup Node
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      # Setup pnpm after node, the runners have no system node for its installer to use.
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      # dlx fetches just the linter and its config, so the workspace is never installed.
-      # The config package is needed because commitlint.config.mjs extends it, and both
-      # versions are read from package.json so titles are checked against the same rules
-      # as the commit-msg hook. The title is passed through the environment rather than
-      # interpolated into the script, so it cannot be executed by the shell.
+      # The runner image has Node.js and npm, so npx fetches just the current linter and the
+      # config the commitlint configuration extends, and the workspace is never installed. The
+      # title is passed through the environment rather than interpolated into the script, so it
+      # cannot be executed by the shell.
       - name: Lint PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          CLI_VERSION=$(node -p "require('./package.json').devDependencies['@commitlint/cli']")
-          CONFIG_VERSION=$(node -p "require('./package.json').devDependencies['@commitlint/config-conventional']")
-          printf '%s' "$PR_TITLE" | pnpm dlx --package "@commitlint/cli@$CLI_VERSION" --package "@commitlint/config-conventional@$CONFIG_VERSION" commitlint
+          printf '%s' "$PR_TITLE" | npx --yes --package @commitlint/cli --package @commitlint/config-conventional commitlint

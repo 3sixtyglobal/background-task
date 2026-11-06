@@ -11,14 +11,18 @@ permissions:
   contents: read
   issues: write
 
+env:
+  # The number of the organisation project new issues are added to.
+  PROJECT_NUMBER: 1
+
 jobs:
   add-to-project:
-    runs-on: ${{ github.event.repository.private && fromJSON('{"group":"3sixty","labels":"self-hosted-small"}') || 'ubuntu-latest' }}
+    runs-on: ubuntu-slim
 
     steps:
       - uses: actions/add-to-project@v2
         with:
-          project-url: https://github.com/orgs/3sixtyglobal/projects/1
+          project-url: https://github.com/orgs/3sixtyglobal/projects/${{ env.PROJECT_NUMBER }}
           github-token: ${{ secrets.ORG_GHA_RELEASE_TOKEN }}
 
       - uses: actions/github-script@v9
